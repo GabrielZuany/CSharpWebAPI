@@ -19,7 +19,7 @@ namespace WebAPI.Application.Services
             _logger.LogInformation("S3Service initialized in region: {Region}", region.DisplayName);
         }
 
-        public async Task CreateBucketAsync(string _bucketName)
+        public async Task<bool> CreateBucketAsync(string _bucketName)
         {
             try
             { 
@@ -31,11 +31,12 @@ namespace WebAPI.Application.Services
 
                 var response = await _client.PutBucketAsync(request);
                 _logger.LogInformation("Bucket created successfully: {BucketName}, HTTP Status: {HttpStatus}", _bucketName, response.HttpStatusCode);
+                return true;
             }
             catch (Exception ex) 
             {
                 _logger.LogError(ex, "Error creating bucket: {BucketName}", _bucketName);
-                throw;
+                return false;
             }
         }
 
@@ -55,15 +56,11 @@ namespace WebAPI.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing buckets");
-                throw;
             }
         }
 
-        public async Task PutObjectAsync(string bucketName, string objectName, string objectPath, ObjectTypeEnum objectType)
+        public async Task<bool> PutObjectAsync(string bucketName, string objectName, string objectPath)
         {
-            // TODO
-            // check if object type is allowed.
-
             var request = new PutObjectRequest
             {
                 BucketName = bucketName,
@@ -72,14 +69,13 @@ namespace WebAPI.Application.Services
             };
 
             var response = await _client.PutObjectAsync(request);
-            if (response.HttpStatusCode == System.Net.HttpStatusCode.OK)
+            if (!(response.HttpStatusCode == System.Net.HttpStatusCode.OK))
             {
-                Console.WriteLine($"Successfully uploaded {objectName} to {bucketName}.");
+                _logger.LogError($"Could not upload {objectName} to {bucketName}.");
+                return false;
             }
-            else
-            {
-                Console.WriteLine($"Could not upload {objectName} to {bucketName}.");
-            }
+            _logger.LogInformation($"Successfully uploaded {objectName} to {bucketName}");
+            return true;
         }
     }
 }
