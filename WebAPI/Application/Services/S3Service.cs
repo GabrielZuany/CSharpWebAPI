@@ -3,12 +3,13 @@ using Amazon.S3.Model;
 using Amazon.Runtime;
 using WebAPI.Domain.Services;
 using WebAPI.Domain.Enum;
+using Amazon.S3.Util;
 
 namespace WebAPI.Application.Services
 {
     public class S3Service : IS3Service
     {
-        private readonly IAmazonS3 _client;
+        public IAmazonS3 _client;
         private readonly ILogger<S3Service> _logger;
 
         public S3Service(string awsKey, string awsSecret, Amazon.RegionEndpoint region, ILogger<S3Service> _logger)
@@ -40,23 +41,44 @@ namespace WebAPI.Application.Services
             }
         }
 
-        public async Task ListBucketsAsync()
+        public async Task<List<string>> ListBucketsNameAsync()
+        {
+            List<string> bucketNames = new List<string>();
+            try
+            {
+                _logger.LogInformation("Fetching list of buckets...");
+
+                var response = await _client.ListBucketsAsync();
+                response.Buckets.ForEach(response => bucketNames.Add(response.BucketName));
+                return bucketNames;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error listing buckets");
+                throw;
+            }
+        }
+
+        public async Task<List<S3Bucket>> ListBucketsMetadataAsync()
         {
             try
             {
                 _logger.LogInformation("Fetching list of buckets...");
 
                 var response = await _client.ListBucketsAsync();
-
-                foreach (var bucket in response.Buckets)
-                {
-                    _logger.LogInformation("Bucket: {BucketName}, Created: {CreationDate}", bucket.BucketName, bucket.CreationDate);
-                }
+                return response.Buckets;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing buckets");
+                throw;
             }
+        }
+
+        [Obsolete]
+        public async Task<bool> BucketAlreadyExists(string _bucketName)
+        {
+            return await _client.DoesS3BucketExistAsync(_bucketName);
         }
 
         public async Task<bool> PutObjectAsync(string bucketName, string objectName, string objectPath)
@@ -77,5 +99,6 @@ namespace WebAPI.Application.Services
             _logger.LogInformation($"Successfully uploaded {objectName} to {bucketName}");
             return true;
         }
+
     }
 }
