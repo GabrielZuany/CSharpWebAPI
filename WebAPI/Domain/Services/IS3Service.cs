@@ -10,5 +10,7 @@ namespace WebAPI.Domain.Services
         Task<List<S3Bucket>> ListBucketsMetadataAsync();
         Task<bool> BucketAlreadyExists(string _bucketName);
         Task<bool> PutObjectAsync(string bucketName, string objectName, string objectPath);
+        Task<bool> PutObjectAsync(string bucketName, string objectName, Stream inputStream);
+        string GetObjectPublicURL(string bucketName, string objectKey);
     }
 }

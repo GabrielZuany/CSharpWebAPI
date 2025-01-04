@@ -4,6 +4,9 @@ using Amazon.Runtime;
 using WebAPI.Domain.Services;
 using WebAPI.Domain.Enum;
 using Amazon.S3.Util;
+using Microsoft.Extensions.Options;
+using Amazon;
+using System.Runtime;
 
 namespace WebAPI.Application.Services
 {
@@ -11,13 +14,17 @@ namespace WebAPI.Application.Services
     {
         public IAmazonS3 _client;
         private readonly ILogger<S3Service> _logger;
+        private readonly S3Settings _settings;
 
-        public S3Service(string awsKey, string awsSecret, Amazon.RegionEndpoint region, ILogger<S3Service> _logger)
+        public S3Service(IOptions<S3Settings> awsSettings, ILogger<S3Service> _logger)
         {
             this._logger = _logger;
-            var credentials = new BasicAWSCredentials(awsKey, awsSecret);
-            this._client = new AmazonS3Client(credentials, region);
-            _logger.LogInformation("S3Service initialized in region: {Region}", region.DisplayName);
+            this._settings = awsSettings.Value;
+            var _region = RegionEndpoint.GetBySystemName(_settings.Region);
+            var credentials = new BasicAWSCredentials(_settings.AWSKey, _settings.AWSSecret);
+            this._client = new AmazonS3Client(credentials, _region);
+
+            _logger.LogInformation("S3Service initialized in region: {Region}", _region.DisplayName);
         }
 
         public async Task<bool> CreateBucketAsync(string _bucketName)
@@ -98,6 +105,31 @@ namespace WebAPI.Application.Services
             }
             _logger.LogInformation($"Successfully uploaded {objectName} to {bucketName}");
             return true;
+        }
+
+        public async Task<bool> PutObjectAsync(string bucketName, string objectName, Stream inputStream)
+        {
+            var request = new PutObjectRequest
+            {
+                BucketName = bucketName,
+                Key = objectName,
+                InputStream = inputStream
+            };
+
+            var response = await _client.PutObjectAsync(request);
+            if (!(response.HttpStatusCode == System.Net.HttpStatusCode.OK))
+            {
+                _logger.LogError($"Could not upload {objectName} to {bucketName}.");
+                return false;
+            }
+            _logger.LogInformation($"Successfully uploaded {objectName} to {bucketName}");
+            return true;
+        }
+
+        public string GetObjectPublicURL(string bucketName, string objectKey)
+        {
+            var region = RegionEndpoint.GetBySystemName(_settings.Region).SystemName;
+            return $"https://{bucketName}.s3.{region}.amazonaws.com/{objectKey}";
         }
 
     }

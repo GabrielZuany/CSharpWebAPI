@@ -2,10 +2,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using WebAPI.Application.Services;
 using WebAPI.Domain.Repository;
+using WebAPI.Domain.Services;
 using WebAPI.Infra.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<S3Settings>(builder.Configuration.GetSection("AWSSettings"));
 
 // Add services to the container.
 
@@ -43,7 +47,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // injects the repository into the controller automatically
 // so we don't need to create a new instance of the repository in the controller constructor every time
+
 builder.Services.AddTransient<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddTransient<IS3Service, S3Service>();
 
 // JWT Authentication Configuration
 var key = Encoding.ASCII.GetBytes(WebAPI.Key.Secret);
