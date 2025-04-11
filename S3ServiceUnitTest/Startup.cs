@@ -21,16 +21,15 @@ namespace S3ServiceUnitTest
             services.AddLogging(builder => builder.AddConsole());
 
             // Register your S3Service with DI
-            services.AddTransient<IS3Service, S3Service>(provider =>
-            {
-                var s3Settings = configuration.GetSection("S3Settings").Get<S3Settings>();
-                return new S3Service(
-                    s3Settings.AwsKey,
-                    s3Settings.AwsSecret,
-                    RegionEndpoint.GetBySystemName(s3Settings.Region),
-                    provider.GetRequiredService<ILogger<S3Service>>()
-                );
-            });
+            //services.AddTransient<IS3Service, S3Service>(provider =>
+            //{
+            //    var s3Settings = configuration.GetSection("S3Settings").Get<S3Settings>();
+            //    return new S3Service(s3Settings, provider.GetRequiredService<ILogger<S3Service>>()
+            //    );
+            //});
+
+            services.Configure<S3Settings>(configuration.GetSection("S3Settings"));
+            services.AddTransient<IS3Service, S3Service>();
 
             return services.BuildServiceProvider();
         }

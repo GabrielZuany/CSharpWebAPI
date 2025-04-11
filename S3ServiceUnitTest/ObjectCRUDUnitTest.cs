@@ -27,7 +27,7 @@ namespace S3ServiceUnitTest
                 await _s3service.CreateBucketAsync(bucketName);
             }
             string objectName = "testsettings.example.json";
-            string objectPath = "C:\\Users\\Gabriel Zuany\\Documents\\GitHub\\CSharpWebAPI\\S3ServiceUnitTest\\testsettings.example.json";
+            string objectPath = "C:\\Users\\Gabriel Zuany\\Documents\\GitHub\\CSharpWebAPI\\S3ServiceUnitTest\\testsettings.json";
 
             bool result = await _s3service.PutObjectAsync(bucketName, objectName, objectPath);
             Assert.True(result);
@@ -41,7 +41,7 @@ namespace S3ServiceUnitTest
                 await _s3service.CreateBucketAsync(bucketName);
             }
             string objectName = "someprefix/testsettings.example.json";
-            string objectPath = "C:\\Users\\Gabriel Zuany\\Documents\\GitHub\\CSharpWebAPI\\S3ServiceUnitTest\\testsettings.example.json";
+            string objectPath = "C:\\Users\\Gabriel Zuany\\Documents\\GitHub\\CSharpWebAPI\\S3ServiceUnitTest\\testsettings.json";
 
             bool result = await _s3service.PutObjectAsync(bucketName, objectName, objectPath);
             Assert.True(result);
