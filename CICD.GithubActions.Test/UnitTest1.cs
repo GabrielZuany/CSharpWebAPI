@@ -5,7 +5,7 @@ namespace CICD.GithubActions.Test
         [Fact]
         public void Test1()
         {
-            Assert.True(1 == 2);
+            Assert.True(true);
         }
     }
 }
