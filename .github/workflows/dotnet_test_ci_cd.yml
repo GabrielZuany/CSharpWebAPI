@@ -1,0 +1,29 @@
+name: .NET Web API unit tests CI/CD pipeline
+
+on:
+  pull_request:
+    branches: [ "main" ]  # Run only when a PR is opened to main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 6 and .NET 7 SDKs
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          6.0.x
+          7.0.x
+
+    - name: Restore dependencies for test project
+      run: dotnet restore CICD.GithubActions.Test/CICD.GithubActions.Test.csproj
+
+    - name: Build test project
+      run: dotnet build CICD.GithubActions.Test/CICD.GithubActions.Test.csproj --no-restore
+
+    - name: Run tests
+      run: dotnet test CICD.GithubActions.Test/CICD.GithubActions.Test.csproj --no-build --verbosity normal
