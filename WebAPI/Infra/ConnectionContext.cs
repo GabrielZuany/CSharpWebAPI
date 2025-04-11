@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Npgsql;
 using WebAPI.Domain.Model;
 
 namespace WebAPI.Infra
@@ -9,7 +11,8 @@ namespace WebAPI.Infra
         
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("Host=localhost;Port=5434;Database=webapi;Username=webapi;Password=webapi");
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder("Host=localhost;Username=test;Password=test");
+            using var dataSource = dataSourceBuilder.Build();
         }
 
 
