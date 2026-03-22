@@ -4,6 +4,7 @@ using WebAPI.Application.ViewModel;
 using WebAPI.Domain.Repository;
 using WebAPI.Domain.Model;
 using WebAPI.Domain.Services;
+using Scalar.AspNetCore;
 
 namespace WebAPI.Controllers
 {
@@ -22,7 +23,7 @@ namespace WebAPI.Controllers
             _s3Service = s3service ?? throw new ArgumentNullException(nameof(_s3Service));
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost("add-employee")]
         public async Task<IActionResult> Add([FromForm]EmployeeViewModel employeeView)
         {
@@ -33,7 +34,6 @@ namespace WebAPI.Controllers
                 using Stream fileStream = employeeView.Photo.OpenReadStream();
                 bool result = await _s3Service.PutObjectAsync(bucketName, key, fileStream);
                 string s3publicURL = _s3Service.GetObjectPublicURL(bucketName, key);
-
                 var employee = new Employee(employeeView.Fullname, employeeView.Age, employeeView.Postalcode, s3publicURL);
                 _employeeRepository.Add(employee);
                 return Ok();
@@ -44,7 +44,7 @@ namespace WebAPI.Controllers
             }
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost("{id}/download-photo")]
         public IActionResult DownloadPhoto(Guid id)
         {
@@ -53,14 +53,15 @@ namespace WebAPI.Controllers
                 var employee = _employeeRepository.Get(id);
                 var dataBytes = System.IO.File.ReadAllBytes(employee.Photo);
                 return File(dataBytes, "image/jpeg");
-            }catch(Exception e)
+            }
+            catch(Exception e)
             {
                 _logger.LogError(e, "Error downloading photo");
                 return StatusCode(500);
             }
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("get-employees")]
         public IActionResult Get(int pageNumber, int pageQuantity)
         {
@@ -68,7 +69,8 @@ namespace WebAPI.Controllers
             {
                 var employees = _employeeRepository.Get(pageNumber, pageQuantity);
                 return Ok(employees);
-            }catch(Exception e)
+            }
+            catch(Exception e)
             {
                 _logger.LogError(e, "Error getting employees");
                 return StatusCode(500);

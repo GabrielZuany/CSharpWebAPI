@@ -1,0 +1,13 @@
+# this container must run in wsl or linux
+
+version: '3'
+services:
+  webapi_pgsql:
+    container_name: webapi_pgsql
+    image: postgres:14
+    environment:
+      POSTGRES_USER: webapi
+      POSTGRES_DB: webapi
+      POSTGRES_PASSWORD: webapi
+    ports:
+      - "5432:5432" # port 5434 is mapped to 5432

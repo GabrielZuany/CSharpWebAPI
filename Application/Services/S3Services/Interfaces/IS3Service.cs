@@ -1,0 +1,15 @@
+﻿using Amazon.S3.Model;
+
+namespace Application.Services.S3Services.Interfaces
+{
+    public interface IS3Service
+    {
+        Task<bool> CreateBucketAsync(string _bucketName);
+        Task<List<string>> ListBucketsNameAsync();
+        Task<List<S3Bucket>> ListBucketsMetadataAsync();
+        Task<bool> BucketAlreadyExists(string _bucketName);
+        Task<bool> PutObjectAsync(string bucketName, string objectName, string objectPath);
+        Task<bool> PutObjectAsync(string bucketName, string objectName, Stream inputStream);
+        string GetObjectPublicURL(string bucketName, string objectKey);
+    }
+}

@@ -2,54 +2,36 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using WebAPI.Application.Services;
 using WebAPI.Domain.Repository;
 using WebAPI.Domain.Services;
+using WebAPI.Infra;
 using WebAPI.Infra.Repository;
+using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<S3Settings>(builder.Configuration.GetSection("AWSSettings"));
 
 // Add services to the container.
+string _connectionString = "Host=localhost;Username=webapi;Password=webapi;Database=postgres";  
+builder.Services.AddDbContext<ConnectionContext>(options =>
+        options.UseNpgsql(_connectionString)
+            .EnableSensitiveDataLogging() // optional
+);
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
-    {
-    {
-        new OpenApiSecurityScheme
-        {
-            Reference = new OpenApiReference
-            {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            },
-            Scheme = "oauth2",
-            Name = "Bearer",
-            In = ParameterLocation.Header
-        },
-        new List<string>()
-        }
-    });
-});
-
 // injects the repository into the controller automatically
 // so we don't need to create a new instance of the repository in the controller constructor every time
 
 builder.Services.AddTransient<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddTransient<IS3Service, S3Service>();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 
 // JWT Authentication Configuration
 var key = Encoding.ASCII.GetBytes(WebAPI.Key.Secret);
@@ -77,8 +59,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/error-local-development");
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}.json";
+    });
+    
+    app.MapScalarApiReference();
+    app.MapGet("/", () => Results.Redirect("/scalar"));
 }
 else
 {
@@ -87,6 +74,7 @@ else
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapControllers();

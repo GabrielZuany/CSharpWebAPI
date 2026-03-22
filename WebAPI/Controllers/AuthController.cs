@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using WebAPI.Application.Services;
-using WebAPI.Domain.Model;
+﻿using Application.DTOs.Requests.Auth;
+using Application.Services.AuthService.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
 {
@@ -8,22 +8,18 @@ namespace WebAPI.Controllers
     [Route("api/v1/auth")]
     public class AuthController : Controller
     {
-        
-        [HttpGet]
-        public IActionResult Auth(string username, string password)
+        private readonly IAuthService authService;
+
+        public AuthController(IAuthService authService)
         {
-            // check if the username and password are correct
-            // if correct, generate a token
-            // if not, return a 401 Unauthorized status code
-            if (username == "admin" && password == "admin")
-            {
-                var token = TokenService.GenerateToken(new Employee());
-                return Ok(token);
-            }
-            else
-            {
-                return Unauthorized();
-            }
+            this.authService = authService;
+        }
+        
+        [HttpPost]
+        public async Task<IActionResult> Auth([FromBody] AuthLoginRequest request)
+        {
+            var response = await this.authService.AdminAuthenticated(request);
+            return response == null ? Unauthorized() : Ok(response);
         }
     }
 }
