@@ -4,8 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Runtime;
-using WebAPI.Application.Services;
-using WebAPI.Domain.Services;
+using Application.Services.S3Services;
+using Application.Services.S3Services.Interfaces;
 
 namespace S3ServiceUnitTest
 {

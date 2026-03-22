@@ -4,10 +4,7 @@ namespace Domain.Employees.Repository
 {
     public interface IEmployeeRepository
     {
-        Task<Employee?> FindByUsernameAndPassword(string username, string password);
-        
-        void Add(Employee employee);
-        List<Employee> Get(int pageNumber, int pageQuantity);
-        Employee? Get(Guid id);
+        void Create(Employee employee);
+        Task<List<Employee>> GetAll(int page, int size);
     }
 }

@@ -14,17 +14,8 @@ namespace Infrastructure.Employees.Repository
         {
             _context = context;
         }
-
-        public async Task<Employee?> FindByUsernameAndPassword(string username, string password)
-        {
-            return await this._context
-                .Employees
-                .Where(w => w.Fullname == username && w.Id.ToString() == password)
-                .AsNoTracking()
-                .SingleOrDefaultAsync();
-        }
         
-        public void Add(Employee employee)
+        public void Create(Employee employee)
         {
             _context.Employees.Add(employee);
             _context.SaveChanges();
@@ -35,12 +26,13 @@ namespace Infrastructure.Employees.Repository
             return _context.Employees.Find(id);
         }
 
-        public List<Employee> Get(int pageNumber, int pageQuantity)
+        public async Task<List<Employee>> GetAll(int page, int size)
         {
-            return _context.Employees
-                .Skip((pageNumber-1) * pageQuantity)
-                .Take(pageQuantity)
-                .ToList();
+            return await _context
+                .Employees
+                .Skip(page * size)
+                .Take(size)
+                .ToListAsync();
         }
     }
 }

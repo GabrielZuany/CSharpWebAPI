@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WebAPI.Domain.Services;
+using Application.Services.S3Services.Interfaces;
 
 namespace S3ServiceUnitTest
 {

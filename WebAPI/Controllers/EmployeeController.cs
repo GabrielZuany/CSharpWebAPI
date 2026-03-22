@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Application.AppServices.Employees.Interfaces;
+using Application.DTOs.Requests.Employees;
+using Domain.Employees.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebAPI.Application.ViewModel;
-using WebAPI.Domain.Repository;
-using WebAPI.Domain.Model;
-using WebAPI.Domain.Services;
-using Scalar.AspNetCore;
 
 namespace WebAPI.Controllers
 {
@@ -12,62 +10,40 @@ namespace WebAPI.Controllers
     [Route("api/v1/employee")]
     public class EmployeeController : ControllerBase
     {
-        private readonly IEmployeeRepository _employeeRepository;
-        private readonly IS3Service _s3Service;
+        private readonly IEmployeesAppService employeesAppService;
+        private readonly IEmployeeService employeeService;
         private readonly ILogger<EmployeeController> _logger;
 
-        public EmployeeController(IEmployeeRepository employeeRepository, ILogger<EmployeeController> logger, IS3Service s3service)
+        public EmployeeController(IEmployeesAppService employeesAppService, IEmployeeService employeeService,ILogger<EmployeeController> logger)
         {
-            _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
+            this.employeesAppService = employeesAppService ?? throw new ArgumentNullException(nameof(employeesAppService));
+            this.employeeService = employeeService ?? throw new ArgumentNullException(nameof(employeeService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _s3Service = s3service ?? throw new ArgumentNullException(nameof(_s3Service));
         }
 
         [Authorize]
-        [HttpPost("add-employee")]
-        public async Task<IActionResult> Add([FromForm]EmployeeViewModel employeeView)
+        [HttpPost("create")]
+        public async Task<IActionResult> Create([FromForm]AddEmployeeRequest request)
         {
-            string bucketName = "test-zuzu-webapi-s3dotnet";
-            string key = employeeView.Photo.FileName;
             try
             {
-                using Stream fileStream = employeeView.Photo.OpenReadStream();
-                bool result = await _s3Service.PutObjectAsync(bucketName, key, fileStream);
-                string s3publicURL = _s3Service.GetObjectPublicURL(bucketName, key);
-                var employee = new Employee(employeeView.Fullname, employeeView.Age, employeeView.Postalcode, s3publicURL);
-                _employeeRepository.Add(employee);
+                await employeesAppService.CreateAsync(request);
                 return Ok();
-            }catch(Exception e)
+            }
+            catch(Exception e)
             {
                 _logger.LogError(e, "Error adding employee");
                 return StatusCode(500);
             }
         }
-
+        
         [Authorize]
-        [HttpPost("{id}/download-photo")]
-        public IActionResult DownloadPhoto(Guid id)
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber, [FromQuery] int pageQuantity)
         {
             try
             {
-                var employee = _employeeRepository.Get(id);
-                var dataBytes = System.IO.File.ReadAllBytes(employee.Photo);
-                return File(dataBytes, "image/jpeg");
-            }
-            catch(Exception e)
-            {
-                _logger.LogError(e, "Error downloading photo");
-                return StatusCode(500);
-            }
-        }
-
-        [Authorize]
-        [HttpGet("get-employees")]
-        public IActionResult Get(int pageNumber, int pageQuantity)
-        {
-            try
-            {
-                var employees = _employeeRepository.Get(pageNumber, pageQuantity);
+                var employees = await employeeService.GetAll(pageNumber, pageQuantity);
                 return Ok(employees);
             }
             catch(Exception e)
@@ -76,5 +52,24 @@ namespace WebAPI.Controllers
                 return StatusCode(500);
             }            
         }
+
+        // [Authorize]
+        // [HttpPost("{id}/download-photo")]
+        // public IActionResult DownloadPhoto(Guid id)
+        // {
+        //     try
+        //     {
+        //         var employee = _employeeRepository.Get(id);
+        //         var dataBytes = System.IO.File.ReadAllBytes(employee.Photo);
+        //         return File(dataBytes, "image/jpeg");
+        //     }
+        //     catch(Exception e)
+        //     {
+        //         _logger.LogError(e, "Error downloading photo");
+        //         return StatusCode(500);
+        //     }
+        // }
+
+        
     }
 }

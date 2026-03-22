@@ -13,9 +13,19 @@ public class EmployeeService : IEmployeeService
         this.employeeRepository = employeeRepository;
     }
 
-    public async Task<Employee?> FindByUsernameAndPassword(string username, string password)
+    public void Create(string fullname, int age, string postalCode, string s3PublicUrl)
     {
-        return await this.employeeRepository.FindByUsernameAndPassword(username, password);
+        if (string.IsNullOrEmpty(s3PublicUrl))
+            throw new ArgumentNullException(nameof(s3PublicUrl));
+        
+        var employee = new Employee(fullname, age, postalCode, s3PublicUrl);
+        employeeRepository.Create(employee);
     }
 
+
+    public async Task<List<Employee>> GetAll(int page, int size)
+    {
+        if (page < 0) page = 0;
+        return await this.employeeRepository.GetAll(page, size);
+    }
 }
