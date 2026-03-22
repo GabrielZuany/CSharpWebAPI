@@ -1,9 +1,10 @@
 using Application.DTOs.Requests.Auth;
 using Application.Services.AuthService.Interfaces;
 using Application.Services.TokenService.Interfaces;
-using Domain.Employees.Model;
 using Domain.Employees.Services;
 using Domain.Enums;
+using Domain.Users.Model;
+using Domain.Users.Service;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 
 namespace Application.Services.AuthService;
@@ -11,7 +12,7 @@ namespace Application.Services.AuthService;
 public class AuthService : IAuthService
 {
     private readonly ITokenService tokenService;
-    private readonly IEmployeeService employeeService;
+    private readonly IUsersService usersService;
 
     public AuthService(ITokenService tokenService, IEmployeeService employeeService)
     {
@@ -20,12 +21,12 @@ public class AuthService : IAuthService
 
     public async Task<AccessTokenResponse?>? AdminAuthenticated(AuthLoginRequest request)
     {
-        var employee = await this.employeeService.FindByUsernameAndPassword(request.Username, request.Password);
+        var user = await this.usersService.FindByUsernameAndPassword(request.Username, request.Password);
         
-        if (employee == null || employee.LevelAccess != LevelAccessEnum.Admin)
+        if (user == null || user.LevelAccess != LevelAccessEnum.Admin)
             return null;
         
-        var token = this.tokenService.GenerateToken<Employee>(employee, Key.Secret).ToString();
+        var token = this.tokenService.GenerateToken<User>(user, Key.Secret).ToString();
         var response = new AccessTokenResponse()
         {
             AccessToken = token,
