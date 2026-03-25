@@ -21,5 +21,12 @@ namespace WebAPI.Controllers
             var response = await this.authService.AdminAuthenticated(request);
             return response == null ? Unauthorized() : Ok(response);
         }
+        
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            var response = await this.authService.RefreshToken(request);
+            return response == null ? Unauthorized() : Ok(response);
+        }
     }
 }

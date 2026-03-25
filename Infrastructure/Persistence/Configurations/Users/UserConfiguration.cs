@@ -30,6 +30,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(e => e.LevelAccess)
             .IsRequired();
 
+        builder.Property(e => e.RefreshToken)
+            .HasDefaultValue(null)
+            .HasMaxLength(200);
+
         builder.HasIndex(e => e.Username)
             .IsUnique();
     }
