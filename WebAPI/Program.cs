@@ -1,4 +1,6 @@
+// WebAPI/Program.cs
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -18,12 +20,12 @@ using Domain.Users.Service;
 using Infrastructure.Employees.Repository;
 using Infrastructure.Employees.Services;
 using Microsoft.AspNetCore.Connections;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Infrastructure.Persistence;
 using Infrastructure.Users.Repository;
 using Infrastructure.Users.Services;
+using WebAPI.Middlewares;
 using ConnectionContext = Infrastructure.Persistence.ConnectionContext;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,9 +55,13 @@ builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 builder.Services.AddTransient<IS3Service, S3Service>();
 builder.Services.AddTransient<IEmployeesAppService, EmployeesAppService>();
 
+
+// Register RequestDelegate
+builder.Services.AddTransient<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 
 // JWT Authentication Configuration
 var key = Encoding.ASCII.GetBytes(Key.Secret);
@@ -76,7 +82,7 @@ builder.Services.AddAuthentication(x =>
     };
 });
 
-
+// Add the custom middleware to the pipeline
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -85,8 +91,6 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate(); 
 }
 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/error-local-development");
@@ -104,6 +108,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<TokenValidatonMiddleware>();
 
 app.UseAuthentication(); 
 app.UseAuthorization();

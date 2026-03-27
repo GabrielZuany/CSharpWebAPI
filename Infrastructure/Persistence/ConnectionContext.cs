@@ -1,6 +1,8 @@
 ﻿using Domain.Employees.Model;
+using Domain.RefreshTokens.Model;
 using Domain.Users.Model;
 using Infrastructure.Persistence.Configurations.Employees;
+using Infrastructure.Persistence.Configurations.RefreshTokens;
 using Infrastructure.Persistence.Configurations.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +12,7 @@ namespace Infrastructure.Persistence
     {
         public DbSet<Employee> Employees { get; set; }       
         public DbSet<User> Users { get; set; }       
+        public DbSet<RefreshToken> RefreshTokens { get; set; }       
     
         private readonly string _connectionString = "Host=localhost;Username=test;Password=test"; 
         
@@ -21,6 +24,7 @@ namespace Infrastructure.Persistence
         {
             modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
             modelBuilder.ApplyConfiguration(new UserConfiguration());
+            modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
         }
     }
 }

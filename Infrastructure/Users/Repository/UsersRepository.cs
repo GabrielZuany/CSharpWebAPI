@@ -23,11 +23,11 @@ public class UsersRepository : IUsersRepository
             .SingleOrDefaultAsync();
     }
     
-    public async Task<User?> FindByUsername(string username)
+    public async Task<User?> FindById(Guid id)
     {
         return await this._context
             .Users
-            .Where(w => w.Username == username)
+            .Where(w => w.Id == id)
             .AsNoTracking()
             .SingleOrDefaultAsync();
     }
