@@ -4,7 +4,8 @@ namespace Domain.Employees.Repository
 {
     public interface IEmployeeRepository
     {
-        void Create(Employee employee);
+        void Add(Employee employee);
+        Task<Employee?>? Get(Guid id);
         Task<List<Employee>> GetAll(int page, int size);
     }
 }

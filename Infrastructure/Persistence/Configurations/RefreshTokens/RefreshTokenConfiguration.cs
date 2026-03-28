@@ -30,6 +30,7 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .HasForeignKey(e => e.UserId);
 
         builder.HasIndex(i => i.Token).IsUnique();
+        builder.HasIndex(i => i.UserId);
 
     }
     

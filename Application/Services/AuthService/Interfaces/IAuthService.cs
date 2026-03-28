@@ -14,5 +14,4 @@ public interface IAuthService
 
     Task<RefreshToken?>? FindByToken(string token);
 
-    Task RevokeExpiredRefreshToken(RefreshToken token);
 }

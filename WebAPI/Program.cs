@@ -1,8 +1,7 @@
-// WebAPI/Program.cs
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Text;
 using Application.AppServices.Employees;
 using Application.AppServices.Employees.Interfaces;
@@ -20,10 +19,7 @@ using Domain.Users.Repository;
 using Domain.Users.Service;
 using Infrastructure.Employees.Repository;
 using Infrastructure.Employees.Services;
-using Microsoft.AspNetCore.Connections;
-using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
-using Infrastructure.Persistence;
 using Infrastructure.RefreshTokens.Repository;
 using Infrastructure.Users.Repository;
 using Infrastructure.Users.Services;
@@ -38,7 +34,7 @@ builder.Services.Configure<S3Settings>(builder.Configuration.GetSection("AWSSett
 string _connectionString = "Host=localhost;Username=webapi;Password=webapi;Database=postgres";  
 builder.Services.AddDbContext<ConnectionContext>(options =>
         options.UseNpgsql(_connectionString)
-            .EnableSensitiveDataLogging() // optional
+            .EnableSensitiveDataLogging()
 );
 
 builder.Services.AddControllers();
@@ -47,17 +43,11 @@ builder.Services.AddControllers();
 builder.Services.AddTransient<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddHttpContextAccessor();
 
-// injects the repository into the controller automatically
-// so we don't need to create a new instance of the repository in the controller constructor every time
-
 builder.Services.AddTransient<ITokenService, TokenService>();
-
 builder.Services.AddTransient<IUsersRepository, UsersRepository>();
 builder.Services.AddTransient<IUsersService, UsersService>();
 builder.Services.AddTransient<IRefreshTokensRepository, RefreshTokensRepository>();
-
 builder.Services.AddTransient<IAuthService, AuthService>();
-
 builder.Services.AddTransient<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 builder.Services.AddTransient<IS3Service, S3Service>();
@@ -85,7 +75,6 @@ builder.Services.AddAuthentication(x =>
     };
 });
 
-// Add the custom middleware to the pipeline
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

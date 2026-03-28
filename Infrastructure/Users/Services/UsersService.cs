@@ -15,6 +15,9 @@ public class UsersService : IUsersService
     
     public async Task<User?> FindByUsernameAndPassword(string username, string password)
     {
+        if (string.IsNullOrEmpty(username)) throw new ArgumentNullException(nameof(username));
+        if (string.IsNullOrEmpty(password)) throw new ArgumentNullException(nameof(password));
+        
         return await this.usersRepository.FindByUsernameAndPassword(username, password);
     }
 }

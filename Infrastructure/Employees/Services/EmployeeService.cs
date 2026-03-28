@@ -13,15 +13,14 @@ public class EmployeeService : IEmployeeService
         this.employeeRepository = employeeRepository;
     }
 
-    public void Create(string fullname, int age, string postalCode, string s3PublicUrl)
+    public void Add(string fullname, int age, string postalCode, string s3PublicUrl)
     {
         if (string.IsNullOrEmpty(s3PublicUrl))
             throw new ArgumentNullException(nameof(s3PublicUrl));
         
         var employee = new Employee(fullname, age, postalCode, s3PublicUrl);
-        employeeRepository.Create(employee);
+        employeeRepository.Add(employee);
     }
-
 
     public async Task<List<Employee>> GetAll(int page, int size)
     {

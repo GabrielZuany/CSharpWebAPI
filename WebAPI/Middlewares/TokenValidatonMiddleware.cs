@@ -18,9 +18,9 @@ public class TokenValidationMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var publicRoutes = new[] { "/api/v1/auth" };
+        var publicRoutes = new[] { "/api/v1/auth" , "/scalar"};
         if (publicRoutes.Any(r => context.Request.Path.StartsWithSegments(r, StringComparison.OrdinalIgnoreCase)
-                                  && context.Request.Method == HttpMethods.Post
+                                  && (context.Request.Method == HttpMethods.Post || context.Request.Method == HttpMethods.Get)
                                   && !context.Request.Path.Value!.Contains("refresh")))
         {
             await _next(context);
@@ -58,23 +58,22 @@ public class TokenValidationMiddleware
             var currentToken = await authService.FindByToken(refreshToken);
             if (currentToken != null)
             {
-                var newTokens = await authService.RefreshToken(new RefreshTokenRequest()
+                var newRefreshToken = await authService.RefreshToken(new RefreshTokenRequest()
                 {
                     UserId = currentToken.UserId,
                     RefreshToken = currentToken.Token
                 });
 
-                if (newTokens != null)
+                if (newRefreshToken != null)
                 {
-                    var claims = new[] { new Claim("UserId", userId.ToString()!) };
+                    var claims = new[] { new Claim("claimObject", userId.ToString()!) };
                     var identity = new ClaimsIdentity(claims, "Bearer");
                     context.User = new ClaimsPrincipal(identity);
                     
-                    context.Response.Headers.Append("Authorization", $"Bearer {newTokens.AccessToken}");
-                    context.Response.Headers.Append("Refresh-Token", newTokens.RefreshToken);
-                    context.Items["UserId"] = authService.ValidateToken(newTokens.AccessToken);
+                    context.Response.Headers.Append("Authorization", $"Bearer {newRefreshToken.AccessToken}");
+                    context.Response.Headers.Append("Refresh-Token", newRefreshToken.RefreshToken);
+                    context.Items["UserId"] = authService.ValidateToken(newRefreshToken.AccessToken);
                     
-                    await authService.RevokeExpiredRefreshToken(currentToken);
                     await _next(context);
                     return;
                 }

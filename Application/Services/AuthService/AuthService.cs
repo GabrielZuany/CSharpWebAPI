@@ -66,12 +66,17 @@ public class AuthService : IAuthService
         }
 
         var newAccessToken = this.tokenService.GenerateToken<Guid>(user.Id, Key.Secret).ToString();
-        var newExpiresAt = DateTime.UtcNow.AddMinutes(5).Ticks;
+        var newExpiresAt = DateTime.UtcNow.AddMinutes(3).Ticks;
         var newRefreshToken = this.tokenService.GenerateRefreshToken(user.Id);
         
-        refreshToken.Token = newRefreshToken;
-        refreshToken.ExpiresAt = DateTime.UtcNow.AddMinutes(5);
-        await refreshTokensRepository.Update(refreshToken); 
+        await this.refreshTokensRepository.Add(new RefreshToken()
+        {
+            UserId = user.Id,
+            Token = newRefreshToken,
+            ExpiresAt = refreshToken.ExpiresAt,
+        });
+        
+        await refreshTokensRepository.Delete(refreshToken);
 
         var response = new AccessTokenResponse()
         {
@@ -103,10 +108,5 @@ public class AuthService : IAuthService
         }
 
         return null;
-    }
-
-    public async Task RevokeExpiredRefreshToken(RefreshToken token)
-    {
-        refreshTokensRepository.Delete(token);
     }
 }

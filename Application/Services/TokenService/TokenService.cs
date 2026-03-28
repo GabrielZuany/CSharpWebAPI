@@ -16,16 +16,18 @@ namespace Application.Services.TokenService
         public object GenerateToken<T>(T objectBase, string secret)
         {
             var key = Encoding.ASCII.GetBytes(secret);
-
-            var serialized = JsonSerializer.Serialize(objectBase);
+            
+            var claimValue = (objectBase is string || objectBase is Guid || objectBase is int || objectBase is long)
+                ? objectBase.ToString()!
+                : JsonSerializer.Serialize(objectBase);
 
             var tokenConfig = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim("claimObject", serialized)
+                    new Claim("claimObject", claimValue)
                 }),
-                Expires = DateTime.UtcNow.AddMinutes(5),
+                Expires = DateTime.UtcNow.AddMinutes(3),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
@@ -62,7 +64,11 @@ namespace Application.Services.TokenService
                 var jwtToken = (JwtSecurityToken)validatedToken;
                 var claimValue = jwtToken.Claims.First(x => x.Type == "claimObject").Value;
 
-                return JsonSerializer.Deserialize<T>(claimValue);
+                if (typeof(T) == typeof(Guid)) return (T)(object)Guid.Parse(claimValue);
+                if (typeof(T) == typeof(string)) return (T)(object)claimValue;
+                if (typeof(T) == typeof(int)) return (T)(object)int.Parse(claimValue);
+
+                return JsonSerializer.Deserialize<T>(claimValue)!;
             }
             catch
             {

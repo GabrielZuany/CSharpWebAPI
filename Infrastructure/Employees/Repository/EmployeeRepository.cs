@@ -15,15 +15,19 @@ namespace Infrastructure.Employees.Repository
             _context = context;
         }
         
-        public void Create(Employee employee)
+        public void Add(Employee employee)
         {
             _context.Employees.Add(employee);
             _context.SaveChanges();
         }
 
-        public Employee? Get(Guid id)
+        public async Task<Employee?>? Get(Guid id)
         {
-            return _context.Employees.Find(id);
+            return await _context
+                .Employees
+                .Where(w => w.Id.Equals(id))
+                .AsNoTracking()
+                .SingleOrDefaultAsync();
         }
 
         public async Task<List<Employee>> GetAll(int page, int size)
@@ -32,6 +36,7 @@ namespace Infrastructure.Employees.Repository
                 .Employees
                 .Skip(page * size)
                 .Take(size)
+                .AsNoTracking()
                 .ToListAsync();
         }
     }

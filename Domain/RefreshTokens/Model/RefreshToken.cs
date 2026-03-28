@@ -7,6 +7,6 @@ public class RefreshToken : Base
 {
     public string Token { get; set; }
     public Guid UserId { get; set; }
-    public DateTime ExpiresAt { get; set; }
+    public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddMinutes(3);
     public User User { get; set; } 
 }
