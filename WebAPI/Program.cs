@@ -15,6 +15,7 @@ using Application.Services.TokenService;
 using Application.Services.TokenService.Interfaces;
 using Domain.Employees.Repository;
 using Domain.Employees.Services;
+using Domain.RefreshTokens.Repository;
 using Domain.Users.Repository;
 using Domain.Users.Service;
 using Infrastructure.Employees.Repository;
@@ -23,6 +24,7 @@ using Microsoft.AspNetCore.Connections;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Infrastructure.Persistence;
+using Infrastructure.RefreshTokens.Repository;
 using Infrastructure.Users.Repository;
 using Infrastructure.Users.Services;
 using WebAPI.Middlewares;
@@ -40,6 +42,11 @@ builder.Services.AddDbContext<ConnectionContext>(options =>
 );
 
 builder.Services.AddControllers();
+
+// Register RequestDelegate
+builder.Services.AddTransient<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddHttpContextAccessor();
+
 // injects the repository into the controller automatically
 // so we don't need to create a new instance of the repository in the controller constructor every time
 
@@ -47,6 +54,7 @@ builder.Services.AddTransient<ITokenService, TokenService>();
 
 builder.Services.AddTransient<IUsersRepository, UsersRepository>();
 builder.Services.AddTransient<IUsersService, UsersService>();
+builder.Services.AddTransient<IRefreshTokensRepository, RefreshTokensRepository>();
 
 builder.Services.AddTransient<IAuthService, AuthService>();
 
@@ -54,11 +62,6 @@ builder.Services.AddTransient<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 builder.Services.AddTransient<IS3Service, S3Service>();
 builder.Services.AddTransient<IEmployeesAppService, EmployeesAppService>();
-
-
-// Register RequestDelegate
-builder.Services.AddTransient<IHttpContextAccessor, HttpContextAccessor>();
-builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -109,7 +112,7 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseMiddleware<TokenValidatonMiddleware>();
+app.UseMiddleware<TokenValidationMiddleware>();
 
 app.UseAuthentication(); 
 app.UseAuthorization();

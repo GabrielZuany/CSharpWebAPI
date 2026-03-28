@@ -31,18 +31,15 @@ public class AuthService : IAuthService
         if (user == null || user.LevelAccess != LevelAccessEnum.Admin)
             return null;
 
-        var accessToken = this.tokenService.GenerateToken<User>(user, Key.Secret).ToString();
-        var expiresAt = DateTime.Now.AddMinutes(5).Ticks;
+        var accessToken = this.tokenService.GenerateToken<Guid>(user.Id, Key.Secret).ToString();
+        var expiresAt = DateTime.UtcNow.AddMinutes(5).Ticks;
         var refreshToken = this.tokenService.GenerateRefreshToken(user);
         
-        await this.usersRepository.UpdateUser(user);
-
         var refreshTokenDb = new RefreshToken()
         {
-            User = user,
             Token = refreshToken,
             UserId = user.Id,
-            ExpiresAt = DateTime.Now.AddMinutes(5)
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5)
         };
         await this.refreshTokensRepository.Add(refreshTokenDb);
 
@@ -68,20 +65,13 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var newAccessToken = this.tokenService.GenerateToken<User>(user, Key.Secret).ToString();
-        var newExpiresAt = DateTime.Now.AddMinutes(5).Ticks;
-        var newRefreshToken = this.tokenService.GenerateRefreshToken(user);
-
-        await usersRepository.UpdateUser(user);
+        var newAccessToken = this.tokenService.GenerateToken<Guid>(user.Id, Key.Secret).ToString();
+        var newExpiresAt = DateTime.UtcNow.AddMinutes(5).Ticks;
+        var newRefreshToken = this.tokenService.GenerateRefreshToken(user.Id);
         
-        var refreshTokenDb = new RefreshToken()
-        {
-            User = user,
-            Token = refreshToken.Token,
-            UserId = user.Id,
-            ExpiresAt = DateTime.Now.AddMinutes(5)
-        };
-        await this.refreshTokensRepository.Add(refreshTokenDb);
+        refreshToken.Token = newRefreshToken;
+        refreshToken.ExpiresAt = DateTime.UtcNow.AddMinutes(5);
+        await refreshTokensRepository.Update(refreshToken); 
 
         var response = new AccessTokenResponse()
         {
@@ -90,5 +80,33 @@ public class AuthService : IAuthService
             RefreshToken = newRefreshToken
         };
         return response;
+    }
+
+    public async Task<RefreshToken?>? FindByToken(string token)
+    {
+        return await refreshTokensRepository.FindByToken(token);
+    }
+
+    public Guid? ValidateToken(string token)
+    {
+        try
+        {
+            Guid? userId = tokenService.ValidateToken<Guid>(token);
+            if (userId != null && !userId.Equals(Guid.Empty))
+            {
+                return userId;
+            }
+        }
+        catch (Exception)
+        {
+            // Handle exception, e.g., log it or return null
+        }
+
+        return null;
+    }
+
+    public async Task RevokeExpiredRefreshToken(RefreshToken token)
+    {
+        refreshTokensRepository.Delete(token);
     }
 }

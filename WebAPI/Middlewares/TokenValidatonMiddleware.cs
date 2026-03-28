@@ -1,20 +1,35 @@
+using System.Security.Claims;
+using Application.DTOs.Requests.Auth;
 using Application.Services.AuthService.Interfaces;
+using Microsoft.AspNetCore.Authentication;
 
 namespace WebAPI.Middlewares;
 
-public class TokenValidatonMiddleware
+public class TokenValidationMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IAuthService _authService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public TokenValidatonMiddleware(RequestDelegate next, IAuthService authService)
+    public TokenValidationMiddleware(RequestDelegate next, IServiceScopeFactory scopeFactory)
     {
-        _next = next ?? throw  new ArgumentNullException(nameof(next));
-        _authService = authService ?? throw  new ArgumentNullException(nameof(authService));
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
+        var publicRoutes = new[] { "/api/v1/auth" };
+        if (publicRoutes.Any(r => context.Request.Path.StartsWithSegments(r, StringComparison.OrdinalIgnoreCase)
+                                  && context.Request.Method == HttpMethods.Post
+                                  && !context.Request.Path.Value!.Contains("refresh")))
+        {
+            await _next(context);
+            return;
+        }
+
+        using var scope = _scopeFactory.CreateScope();
+        var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
         if (token == null)
@@ -24,36 +39,49 @@ public class TokenValidatonMiddleware
             return;
         }
 
-        // try
-        // {
-        //     var user = await _authService.ValidateToken(token);
-        //     if (user != null)
-        //     {
-        //         context.Items["User"] = user;
-        //         await _next(context);
-        //         return;
-        //     }
-        // }
-        // catch (Exception)
-        // {
-        //     var refreshToken = context.Request.Headers["Refresh-Token"].FirstOrDefault();
-        //     if (!string.IsNullOrEmpty(refreshToken))
-        //     {
-        //         var newTokens = await _authService.RefreshToken(refreshToken);
-        //         if (newTokens != null)
-        //         {
-        //             context.Response.Headers.Add("Authorization", $"Bearer {newTokens.AccessToken}");
-        //             context.Response.Headers.Add("Refresh-Token", newTokens.RefreshToken);
-        //
-        //             context.Items["User"] = await _authService.ValidateToken(newTokens.AccessToken);
-        //             await _next(context);
-        //             return;
-        //         }
-        //     }
-        // }
+        var userId = authService.ValidateToken(token);
+        if (userId != null)
+        {
+            var claims = new[] { new Claim("UserId", userId.ToString()!) };
+            var identity = new ClaimsIdentity(claims, "Bearer");
+            context.User = new ClaimsPrincipal(identity);
+    
+            context.Items["UserId"] = userId;
+            context.Response.StatusCode = StatusCodes.Status200OK;
+            await _next(context);
+            return;
+        }
 
-        // context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        // await context.Response.WriteAsync("Invalid token");
-    } 
+        var refreshToken = context.Request.Headers["Refresh-Token"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(refreshToken))
+        {
+            var currentToken = await authService.FindByToken(refreshToken);
+            if (currentToken != null)
+            {
+                var newTokens = await authService.RefreshToken(new RefreshTokenRequest()
+                {
+                    UserId = currentToken.UserId,
+                    RefreshToken = currentToken.Token
+                });
 
+                if (newTokens != null)
+                {
+                    var claims = new[] { new Claim("UserId", userId.ToString()!) };
+                    var identity = new ClaimsIdentity(claims, "Bearer");
+                    context.User = new ClaimsPrincipal(identity);
+                    
+                    context.Response.Headers.Append("Authorization", $"Bearer {newTokens.AccessToken}");
+                    context.Response.Headers.Append("Refresh-Token", newTokens.RefreshToken);
+                    context.Items["UserId"] = authService.ValidateToken(newTokens.AccessToken);
+                    
+                    await authService.RevokeExpiredRefreshToken(currentToken);
+                    await _next(context);
+                    return;
+                }
+            }
+        }
+
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsync("Invalid or expired token");
+    }
 }
